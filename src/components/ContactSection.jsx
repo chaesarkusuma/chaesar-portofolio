@@ -4,11 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 const COMMENTS_STORAGE_KEY = 'chaesar_portfolio_comments_v1'
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
-// Optional EmailJS credentials: populate to dispatch real emails via EmailJS REST API
+// EmailJS credentials injected from Vite environment variables (.env)
 const EMAILJS_CONFIG = {
-  serviceId: '',
-  templateId: '',
-  publicKey: ''
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID?.trim() || '',
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID?.trim() || '',
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY?.trim() || ''
 }
 
 const FIND_ME_PHOTO = '/profile.jpg'
@@ -405,19 +405,28 @@ function ContactSection() {
     setIsSendingMessage(true)
     try {
       const { serviceId, templateId, publicKey } = EMAILJS_CONFIG
-      if (serviceId && templateId && publicKey) {
-        const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            service_id: serviceId,
-            template_id: templateId,
-            user_id: publicKey,
-            template_params: { from_name: name, from_email: email, message }
-          })
-        })
-        if (!res.ok) throw new Error('EmailJS failed')
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error('Konfigurasi EmailJS (.env) belum terbaca.')
       }
+
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: serviceId,
+          template_id: templateId,
+          user_id: publicKey,
+          template_params: {
+            name,
+            from_name: name,
+            email,
+            from_email: email,
+            reply_to: email,
+            message
+          }
+        })
+      })
+      if (!res.ok) throw new Error('EmailJS failed')
 
       setContactForm({ name: '', email: '', message: '' })
       showToast('success', 'Pesan berhasil dikirim! Terima kasih telah menghubungi.')
