@@ -1,7 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { supabase } from '../lib/supabaseClient.js'
 
-const COMMENTS_STORAGE_KEY = 'chaesar_portfolio_comments_v1'
+const AVATARS_BUCKET = 'avatars'
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 // EmailJS credentials injected from Vite environment variables (.env)
@@ -11,7 +12,7 @@ const EMAILJS_CONFIG = {
   publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY?.trim() || ''
 }
 
-const FIND_ME_PHOTO = '/profile.jpg'
+const FIND_ME_PHOTO = '/avatarbaru.jpg'
 
 const SOCIAL_LINKS = [
   {
@@ -41,44 +42,6 @@ const SOCIAL_LINKS = [
     subtitle: '@chaesarkusuma',
     href: 'https://tiktok.com/@chaesarkusuma',
     iconBg: 'bg-[#0F1014] text-white border border-white/15'
-  }
-]
-
-const SEED_COMMENTS = [
-  {
-    id: 'seed-1',
-    name: 'Andika',
-    text: 'Keren banget portfolionya bang, transisinya halus parah!',
-    avatar: null,
-    staticTime: '2d ago'
-  },
-  {
-    id: 'seed-2',
-    name: 'dilacantik dari ipb',
-    text: 'Gokil kak, info GitHub-nya dong!',
-    avatar: null,
-    staticTime: '2d ago'
-  },
-  {
-    id: 'seed-3',
-    name: 'iwaw',
-    text: 'Gacor bang desain UI-nya rapi dan interaktif.',
-    avatar: null,
-    staticTime: '2d ago'
-  },
-  {
-    id: 'seed-4',
-    name: 'Secret',
-    text: 'Gokil bg web lu, ajarin dong gimana cara buat background konturnya?',
-    avatar: '/avatar.png',
-    staticTime: '3d ago'
-  },
-  {
-    id: 'seed-5',
-    name: 'chnaka',
-    text: 'KERENN BGT BANG!!!',
-    avatar: null,
-    staticTime: '3d ago'
   }
 ]
 
@@ -277,65 +240,28 @@ function SocialBrandGlyph({ id }) {
   )
 }
 
-function loadStoredComments() {
-  try {
-    const raw = window.localStorage.getItem(COMMENTS_STORAGE_KEY)
-    if (!raw) return SEED_COMMENTS
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed
-    }
-  } catch {
-    // Ignore storage read failures in restricted environments
+function mapCommentRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    message: row.message,
+    avatarUrl: row.avatar_url || null,
+    createdAt: row.created_at
   }
-  return SEED_COMMENTS
 }
 
-function formatCommentTime(comment) {
-  if (comment.staticTime) return comment.staticTime
-  if (!comment.createdAt) return 'Just now'
+function formatCommentTime(createdAt) {
+  if (!createdAt) return 'Just now'
+  const createdMs = new Date(createdAt).getTime()
+  if (Number.isNaN(createdMs)) return 'Just now'
 
-  const elapsedSec = Math.max(0, Math.floor((Date.now() - comment.createdAt) / 1000))
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - createdMs) / 1000))
   if (elapsedSec < 60) return 'Just now'
   const minutes = Math.floor(elapsedSec / 60)
   if (minutes < 60) return `${minutes}m ago`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}h ago`
   return `${Math.floor(hours / 24)}d ago`
-}
-
-/**
- * Downscales an uploaded avatar file into a compact square JPEG DataURL so
- * user avatars stay lightweight inside localStorage without blowing quota.
- */
-function resizeAvatarFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onerror = () => reject(new Error('Failed to read image'))
-    reader.onload = () => {
-      const img = new Image()
-      img.onerror = () => reject(new Error('Invalid image file'))
-      img.onload = () => {
-        const size = 128
-        const canvas = document.createElement('canvas')
-        canvas.width = size
-        canvas.height = size
-        const ctx = canvas.getContext('2d')
-        if (!ctx) {
-          resolve(reader.result)
-          return
-        }
-
-        const minSide = Math.min(img.width, img.height)
-        const sx = (img.width - minSide) / 2
-        const sy = (img.height - minSide) / 2
-        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size)
-        resolve(canvas.toDataURL('image/jpeg', 0.85))
-      }
-      img.src = String(reader.result || '')
-    }
-    reader.readAsDataURL(file)
-  })
 }
 
 const DARK_GLASS_CARD =
@@ -362,19 +288,81 @@ function ContactSection() {
   const [isSendingMessage, setIsSendingMessage] = useState(false)
   const [toast, setToast] = useState(null)
 
-  const [comments, setComments] = useState(loadStoredComments)
+  const [comments, setComments] = useState([])
+  const [isLoadingComments, setIsLoadingComments] = useState(Boolean(supabase))
+  const [commentsError, setCommentsError] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [commentForm, setCommentForm] = useState({ name: '', text: '' })
+  const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [avatarFileName, setAvatarFileName] = useState('')
   const [avatarError, setAvatarError] = useState('')
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments))
-    } catch {
-      // Ignore storage quota errors cleanly
+    if (!supabase) {
+      setIsLoadingComments(false)
+      setCommentsError('Konfigurasi Supabase belum tersedia.')
+      return undefined
     }
-  }, [comments])
+
+    let cancelled = false
+
+    const fetchComments = async () => {
+      setIsLoadingComments(true)
+      setCommentsError('')
+      const { data, error } = await supabase
+        .from('comments')
+        .select('id, name, message, avatar_url, created_at')
+        .order('created_at', { ascending: false })
+
+      if (cancelled) return
+
+      if (error) {
+        setCommentsError('Gagal memuat daftar komentar.')
+      } else {
+        setComments((data || []).map(mapCommentRow))
+      }
+      setIsLoadingComments(false)
+    }
+
+    fetchComments()
+
+    const channel = supabase
+      .channel('comments-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const inserted = mapCommentRow(payload.new)
+            setComments((prev) =>
+              prev.some((item) => item.id === inserted.id) ? prev : [inserted, ...prev]
+            )
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            const updated = mapCommentRow(payload.new)
+            setComments((prev) =>
+              prev.map((item) => (item.id === updated.id ? updated : item))
+            )
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setComments((prev) => prev.filter((item) => item.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      cancelled = true
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview)
+      }
+    }
+  }, [avatarPreview])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -437,7 +425,7 @@ function ContactSection() {
     }
   }
 
-  const handleAvatarChange = async (event) => {
+  const handleAvatarChange = (event) => {
     const file = event.target.files?.[0]
     setAvatarError('')
     if (!file) return
@@ -454,16 +442,19 @@ function ContactSection() {
       return
     }
 
-    try {
-      const resized = await resizeAvatarFile(file)
-      setAvatarPreview(resized)
-      setAvatarFileName(file.name)
-    } catch {
-      setAvatarError('Tidak dapat memproses foto yang dipilih.')
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview)
     }
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+    setAvatarFileName(file.name)
   }
 
   const handleClearAvatar = () => {
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview)
+    }
+    setAvatarFile(null)
     setAvatarPreview(null)
     setAvatarFileName('')
     setAvatarError('')
@@ -472,28 +463,70 @@ function ContactSection() {
     }
   }
 
-  const handleCommentSubmit = (event) => {
+  const handleCommentSubmit = async (event) => {
     event.preventDefault()
     const name = commentForm.name.trim()
-    const text = commentForm.text.trim()
+    const message = commentForm.text.trim()
 
-    if (!name || !text) {
+    if (!name || !message) {
       showToast('error', 'Nama dan isi komentar wajib diisi.')
       return
     }
 
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      name,
-      text,
-      avatar: avatarPreview,
-      createdAt: Date.now()
+    if (!supabase) {
+      showToast('error', 'Konfigurasi Supabase belum aktif.')
+      return
     }
 
-    setComments((prev) => [newComment, ...prev])
-    setCommentForm({ name: '', text: '' })
-    handleClearAvatar()
-    showToast('success', 'Komentar berhasil ditambahkan!')
+    setIsSubmittingComment(true)
+    try {
+      let avatarUrl = null
+
+      if (avatarFile) {
+        const rawExt = avatarFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const safeExt = rawExt.replace(/[^a-z0-9]/g, '') || 'jpg'
+        const filePath = `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from(AVATARS_BUCKET)
+          .upload(filePath, avatarFile, {
+            cacheControl: '3600',
+            contentType: avatarFile.type,
+            upsert: false
+          })
+
+        if (uploadError) throw uploadError
+
+        const { data: publicUrlData } = supabase.storage
+          .from(AVATARS_BUCKET)
+          .getPublicUrl(filePath)
+
+        avatarUrl = publicUrlData?.publicUrl || null
+      }
+
+      const { data: insertedRow, error: insertError } = await supabase
+        .from('comments')
+        .insert([{ name, message, avatar_url: avatarUrl }])
+        .select('id, name, message, avatar_url, created_at')
+        .single()
+
+      if (insertError) throw insertError
+
+      if (insertedRow) {
+        const mapped = mapCommentRow(insertedRow)
+        setComments((prev) =>
+          prev.some((item) => item.id === mapped.id) ? prev : [mapped, ...prev]
+        )
+      }
+
+      setCommentForm({ name: '', text: '' })
+      handleClearAvatar()
+      showToast('success', 'Komentar berhasil ditambahkan!')
+    } catch (error) {
+      showToast('error', error?.message || 'Gagal mengirim komentar. Coba lagi.')
+    } finally {
+      setIsSubmittingComment(false)
+    }
   }
 
   const revealHidden = prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 24 }
@@ -506,16 +539,16 @@ function ContactSection() {
         aria-labelledby="contact-heading"
         className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-10 px-5 pb-16 pt-24 sm:px-10 sm:pb-24 sm:pt-28 lg:px-14"
       >
-        {/* 2-Column Responsive Layout (~38% Left / ~62% Right) */}
+        {/* 2-Column Responsive Equal-Height Layout (~38% Left / ~62% Right) */}
         <motion.div
           initial={revealHidden}
           whileInView={revealVisible}
           viewport={{ once: true, amount: 0.12 }}
           transition={{ duration: prefersReducedMotion ? 0.2 : 0.75, ease: [0.16, 1, 0.3, 1] }}
-          className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,38fr)_minmax(0,62fr)] lg:gap-7"
+          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)] lg:gap-7"
         >
           {/* Left Column (~38%): Hubungi + Find Me */}
-          <div className="flex flex-col gap-6">
+          <div className="flex h-full flex-col gap-6">
             {/* Top Left Card: Hubungi */}
             <div className={DARK_GLASS_CARD}>
               <h2
@@ -583,41 +616,43 @@ function ContactSection() {
             </div>
 
             {/* Bottom Left Card: Find Me */}
-            <div className={DARK_GLASS_CARD}>
-              <h3 className="font-sans text-lg font-extrabold tracking-tight text-[#F5F5F5] sm:text-xl">
-                Find Me
-              </h3>
+            <div className={`${DARK_GLASS_CARD} flex flex-1 flex-col justify-between`}>
+              <div>
+                <h3 className="font-sans text-lg font-extrabold tracking-tight text-[#F5F5F5] sm:text-xl">
+                  Find Me
+                </h3>
 
-              <div className="mt-4 divide-y divide-white/[0.08]">
-                {SOCIAL_LINKS.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center justify-between gap-3 py-3.5 transition-colors first:pt-1.5 last:pb-3"
-                  >
-                    <div className="flex min-w-0 items-center gap-3.5">
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-105 ${item.iconBg}`}
-                      >
-                        <SocialBrandGlyph id={item.id} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-sans text-sm font-bold text-[#F5F5F5] transition-colors group-hover:text-white">
-                          {item.title}
-                        </p>
-                        <p className="truncate font-sans text-xs text-[#8E9299]">
-                          {item.subtitle}
-                        </p>
+                <div className="mt-4 divide-y divide-white/[0.08]">
+                  {SOCIAL_LINKS.map((item) => (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-between gap-3 py-3.5 transition-colors first:pt-1.5 last:pb-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3.5">
+                        <span
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-105 ${item.iconBg}`}
+                        >
+                          <SocialBrandGlyph id={item.id} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-sans text-sm font-bold text-[#F5F5F5] transition-colors group-hover:text-white">
+                            {item.title}
+                          </p>
+                          <p className="truncate font-sans text-xs text-[#8E9299]">
+                            {item.subtitle}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <span className="shrink-0 text-[#6F737C] transition-colors group-hover:text-white">
-                      <ExternalLinkIcon />
-                    </span>
-                  </a>
-                ))}
+                      <span className="shrink-0 text-[#6F737C] transition-colors group-hover:text-white">
+                        <ExternalLinkIcon />
+                      </span>
+                    </a>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-[#14161D]">
@@ -627,14 +662,14 @@ function ContactSection() {
                   loading="lazy"
                   decoding="async"
                   draggable={false}
-                  className="aspect-[4/3] w-full select-none object-cover object-[50%_62%]"
+                  className="aspect-square w-full select-none object-cover object-center"
                 />
               </div>
             </div>
           </div>
 
           {/* Right Column (~62%): Tulis Komentar + Live Komentar List */}
-          <div className="flex flex-col gap-6">
+          <div className="flex h-full flex-col gap-6">
             {/* Top Right Card: Tulis Komentar */}
             <div className={DARK_GLASS_CARD}>
               <div className="flex items-center gap-3 border-b border-white/[0.08] pb-4">
@@ -742,16 +777,20 @@ function ContactSection() {
                   )}
                 </div>
 
-                <button type="submit" className={PRIMARY_CTA_BUTTON}>
+                <button
+                  type="submit"
+                  disabled={isSubmittingComment}
+                  className={PRIMARY_CTA_BUTTON}
+                >
                   <SendPlaneIcon />
-                  <span>Kirim Komentar</span>
+                  <span>{isSubmittingComment ? 'Mengirim...' : 'Kirim Komentar'}</span>
                 </button>
               </form>
             </div>
 
-            {/* Bottom Right Card: Komentar (Dynamic Live List) */}
-            <div className={DARK_GLASS_CARD}>
-              <div className="flex items-center gap-3 border-b border-white/[0.08] pb-4">
+            {/* Bottom Right Card: Komentar (Dynamic Real-Time Supabase List) */}
+            <div className={`${DARK_GLASS_CARD} flex flex-1 flex-col min-h-0`}>
+              <div className="flex shrink-0 items-center gap-3 border-b border-white/[0.08] pb-4">
                 <span className={DARK_HEADER_BADGE}>
                   <ChatBubbleIcon className="h-4 w-4" />
                 </span>
@@ -760,54 +799,70 @@ function ContactSection() {
                 </h3>
               </div>
 
-              <ul
-                data-lenis-prevent
-                className="mt-2 max-h-[430px] divide-y divide-white/[0.07] overflow-y-auto pr-1"
-              >
-                <AnimatePresence initial={false}>
-                  {comments.map((comment) => (
-                    <motion.li
-                      key={comment.id}
-                      initial={
-                        prefersReducedMotion
-                          ? { opacity: 0 }
-                          : { opacity: 0, y: -12, scale: 0.98 }
-                      }
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                      className="flex items-start gap-3.5 py-4 first:pt-3.5"
-                    >
-                      {comment.avatar ? (
-                        <img
-                          src={comment.avatar}
-                          alt={comment.name}
-                          loading="lazy"
-                          decoding="async"
-                          className="h-10 w-10 shrink-0 rounded-full border border-white/15 object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[#8E9299]">
-                          <UserIcon className="h-4 w-4" />
-                        </span>
-                      )}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="truncate font-sans text-sm font-bold text-[#F5F5F5]">
-                            {comment.name}
-                          </p>
-                          <span className="shrink-0 font-mono text-[11px] text-[#7E828A]">
-                            {formatCommentTime(comment)}
+              <div className="relative mt-2 flex flex-1 flex-col min-h-[280px]">
+                <ul
+                  data-lenis-prevent
+                  className="dark-scrollbar flex-1 min-h-0 max-h-[380px] divide-y divide-white/[0.07] overflow-y-auto pr-2 md:absolute md:inset-0 md:max-h-none"
+                >
+                {isLoadingComments ? (
+                  <li className="py-10 text-center font-sans text-xs text-[#8E9299]">
+                    Memuat komentar...
+                  </li>
+                ) : commentsError ? (
+                  <li className="py-10 text-center font-sans text-xs text-rose-400">
+                    {commentsError}
+                  </li>
+                ) : comments.length === 0 ? (
+                  <li className="py-10 text-center font-sans text-xs text-[#8E9299]">
+                    Belum ada komentar. Jadilah yang pertama!
+                  </li>
+                ) : (
+                  <AnimatePresence initial={false}>
+                    {comments.map((comment) => (
+                      <motion.li
+                        key={comment.id}
+                        initial={
+                          prefersReducedMotion
+                            ? { opacity: 0 }
+                            : { opacity: 0, y: -12, scale: 0.98 }
+                        }
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex items-start gap-3.5 py-4 first:pt-3.5"
+                      >
+                        {comment.avatarUrl ? (
+                          <img
+                            src={comment.avatarUrl}
+                            alt={comment.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-10 w-10 shrink-0 rounded-full border border-white/15 object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[#8E9299]">
+                            <UserIcon className="h-4 w-4" />
                           </span>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className="truncate font-sans text-sm font-bold text-[#F5F5F5]">
+                              {comment.name}
+                            </p>
+                            <span className="shrink-0 font-mono text-[11px] text-[#7E828A]">
+                              {formatCommentTime(comment.createdAt)}
+                            </span>
+                          </div>
+                          <p className="mt-1 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-[#A3A6AE] sm:text-[13px]">
+                            {comment.message}
+                          </p>
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-[#A3A6AE] sm:text-[13px]">
-                          {comment.text}
-                        </p>
-                      </div>
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </ul>
+                      </motion.li>
+                    ))}
+                  </AnimatePresence>
+                )}
+                </ul>
+              </div>
             </div>
           </div>
         </motion.div>
