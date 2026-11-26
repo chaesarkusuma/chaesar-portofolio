@@ -203,14 +203,14 @@ function AboutSection({ onSelectNav, onScrollTo }) {
       <section id="about" aria-labelledby="about-intro-heading" className="relative z-10 w-full">
 
       {/* Stage 1: Centered "About Me" Intro Title inside the contour field */}
-      <div className="relative z-10 flex w-full items-center justify-center px-5 pb-10 pt-[32vh] sm:pb-24 sm:pt-[38vh]">
+      <div className="relative z-10 flex w-full items-center justify-center px-5 pb-8 pt-[24vh] sm:px-8 sm:pb-12 sm:pt-[26vh] md:pb-12 md:pt-[24vh] lg:pb-24 lg:pt-[38vh]">
         <motion.h2
           id="about-intro-heading"
           initial={introHidden}
           whileInView={introVisible}
           viewport={{ once: false, amount: 0.45 }}
           transition={{ duration: prefersReducedMotion ? 0.2 : 0.85, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center font-sans text-5xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-6xl lg:text-[4.25rem]"
+          className="text-center font-sans text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-5xl md:text-5xl lg:text-[4.25rem]"
         >
           About Me
         </motion.h2>
@@ -219,9 +219,9 @@ function AboutSection({ onSelectNav, onScrollTo }) {
       {/* Stage 2: Main 2-column About Me content */}
       <div
         ref={contentRef}
-        className="relative z-10 mx-auto flex w-full max-w-6xl items-center px-5 pb-10 pt-4 sm:px-10 sm:pb-12 sm:pt-10 lg:px-14"
+        className="relative z-10 mx-auto flex w-full max-w-6xl items-center px-5 pb-10 pt-2 sm:px-8 sm:pb-12 sm:pt-6 md:px-8 md:pt-4 lg:px-14 lg:pt-10"
       >
-        <div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="grid w-full grid-cols-1 items-center gap-10 md:grid-cols-[1.2fr_0.8fr] md:gap-8 lg:grid-cols-12 lg:gap-16">
         {/* Left Column: About Me Copy & Quote */}
         <motion.div
           style={{
@@ -232,13 +232,13 @@ function AboutSection({ onSelectNav, onScrollTo }) {
           }}
           className="lg:col-span-7"
         >
-          <p className="font-mono text-[11px] tracking-[0.28em] text-[#7D7D7D] sm:text-xs">
+          <p className="hidden font-mono text-[11px] tracking-[0.28em] text-[#7D7D7D] lg:block lg:text-xs">
             ABOUT ME
           </p>
 
           <h2
             id="about-heading"
-            className="mt-4 font-sans text-[1.9rem] font-extrabold leading-[1.12] tracking-tight text-[#F5F5F5] sm:mt-5 sm:text-[2.7rem] lg:text-[2.95rem]"
+            className="font-sans text-[1.9rem] font-extrabold leading-[1.12] tracking-tight text-[#F5F5F5] sm:text-[2.35rem] md:text-[2.25rem] lg:mt-5 lg:text-[2.95rem]"
           >
             Hi, I&apos;m <span className="whitespace-nowrap">Chaesar Kusuma</span>
           </h2>
@@ -262,11 +262,11 @@ function AboutSection({ onSelectNav, onScrollTo }) {
             scale: cardScale,
             willChange: 'transform, opacity'
           }}
-          className="flex w-full justify-center lg:col-span-5 lg:justify-end"
+          className="flex w-full justify-center md:justify-end lg:col-span-5"
         >
           <SpotlightCard
             spotlightColor="rgba(255, 255, 255, 0.15)"
-            className="w-full max-w-[380px]"
+            className="w-full max-w-[340px] lg:max-w-[380px]"
           >
             {/* Top row: circular avatar + share icon */}
             <div className="flex items-start justify-between">
@@ -302,7 +302,7 @@ function AboutSection({ onSelectNav, onScrollTo }) {
 
             {/* Name & Role */}
             <div className="mt-5">
-              <h3 className="font-sans text-[22px] font-bold tracking-tight text-[#F5F5F5] sm:text-2xl">
+              <h3 className="font-sans text-[21px] font-bold tracking-tight text-[#F5F5F5] sm:text-[22px] md:text-[21px] lg:text-2xl">
                 Chaesar Kusuma
               </h3>
               <p className="mt-1 font-sans text-sm font-normal text-[#8E9299]">
@@ -321,13 +321,15 @@ function AboutSection({ onSelectNav, onScrollTo }) {
             </div>
 
             {/* 3-Column Stats */}
-            <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
               <div>
                 <div className="flex items-center gap-1.5 text-[#F5F5F5]">
                   <StarSolidIcon />
                   <span className="font-sans text-[15px] font-semibold">4.5</span>
                 </div>
-                <p className="mt-1 font-sans text-xs text-[#7E828A]">Rating</p>
+                <p className="mt-1 font-sans text-xs text-[#7E828A] md:text-[11px] lg:text-xs">
+                  Rating
+                </p>
               </div>
 
               <div>
@@ -335,7 +337,9 @@ function AboutSection({ onSelectNav, onScrollTo }) {
                   <FolderIcon />
                   <span className="font-sans text-[15px] font-semibold">15+</span>
                 </div>
-                <p className="mt-1 font-sans text-xs text-[#7E828A]">Project</p>
+                <p className="mt-1 font-sans text-xs text-[#7E828A] md:text-[11px] lg:text-xs">
+                  Project
+                </p>
               </div>
 
               <div>
@@ -343,7 +347,9 @@ function AboutSection({ onSelectNav, onScrollTo }) {
                   <CertificateIcon />
                   <span className="font-sans text-[15px] font-semibold">6+</span>
                 </div>
-                <p className="mt-1 font-sans text-xs text-[#7E828A]">Certificate</p>
+                <p className="mt-1 font-sans text-xs text-[#7E828A] md:text-[11px] lg:text-xs">
+                  Certificate
+                </p>
               </div>
             </div>
 
@@ -352,7 +358,7 @@ function AboutSection({ onSelectNav, onScrollTo }) {
               <a
                 href="#contact"
                 onClick={handleContactClick}
-                className="flex h-12 flex-1 items-center justify-center rounded-full border border-white/[0.1] bg-[#1C1D20] font-sans text-sm font-semibold text-[#F5F5F5] transition-colors hover:border-white/[0.22] hover:bg-[#25272B]"
+                className="flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-full border border-white/[0.1] bg-[#1C1D20] font-sans text-sm font-semibold text-[#F5F5F5] transition-colors hover:border-white/[0.22] hover:bg-[#25272B]"
               >
                 Contact Me
               </a>
