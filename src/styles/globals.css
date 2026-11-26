@@ -1,0 +1,381 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Lazy Arie';
+  src: url('/fonts/Lazy%20Arie.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  background-color: #080808;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Noise / grain texture, extremely subtle, cached on its own GPU layer */
+.chaesar-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  contain: strict;
+  transform: translateZ(0);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+.chaesar-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  contain: strict;
+  transform: translateZ(0);
+  background-image:
+    linear-gradient(to right, #F5F5F5 1px, transparent 1px),
+    linear-gradient(to bottom, #F5F5F5 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* --------------------------------------------------------------------------
+ * Quiet pixel-art night sky animations (CSS keyframes, transform/opacity)
+ * -------------------------------------------------------------------------- */
+
+@keyframes cloud-drift-right {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(var(--dx, 120px), 0, 0);
+  }
+}
+
+@keyframes cloud-drift-left {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(var(--dx, -125px), 0, 0);
+  }
+}
+
+@keyframes cloud-float-y {
+  0%,
+  100% {
+    transform: translate3d(0, calc(var(--dy, 9px) * -1), 0);
+  }
+  50% {
+    transform: translate3d(0, var(--dy, 9px), 0);
+  }
+}
+
+@keyframes cloud-drift-horizon {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: var(--star-min, 0.25);
+  }
+  50% {
+    opacity: var(--star-max, 0.72);
+  }
+}
+
+@keyframes star-gleam {
+  0%,
+  100% {
+    opacity: var(--star-min, 0.4);
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: var(--star-max, 0.92);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes star-float-a {
+  0%,
+  100% {
+    opacity: var(--star-min, 0.28);
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: var(--star-max, 0.58);
+    transform: translate3d(5px, -3px, 0);
+  }
+}
+
+@keyframes star-float-b {
+  0%,
+  100% {
+    opacity: var(--star-min, 0.24);
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: var(--star-max, 0.52);
+    transform: translate3d(-4px, 3px, 0);
+  }
+}
+
+@keyframes orbit-highlight {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -640;
+  }
+}
+
+.pixel-cloud-right {
+  will-change: transform;
+  animation: cloud-drift-right var(--dur, 26s) ease-in-out var(--delay, -6s) infinite;
+}
+
+.pixel-cloud-left {
+  will-change: transform;
+  animation: cloud-drift-left var(--dur, 30s) ease-in-out var(--delay, -14s) infinite;
+}
+
+.pixel-cloud-bob {
+  will-change: transform;
+  animation: cloud-float-y var(--bob-dur, 11s) ease-in-out var(--bob-delay, -3s) infinite;
+}
+
+.pixel-cloud-horizon {
+  will-change: transform;
+  animation: cloud-drift-horizon var(--dur, 46s) linear infinite;
+}
+
+.pixel-star-twinkle {
+  will-change: opacity;
+  animation: star-twinkle var(--dur, 4.8s) ease-in-out var(--delay, -1.2s) infinite;
+}
+
+.pixel-star-gleam {
+  will-change: transform, opacity;
+  animation: star-gleam var(--dur, 5.4s) ease-in-out var(--delay, -2.1s) infinite;
+}
+
+.pixel-star-float-a {
+  will-change: transform, opacity;
+  animation: star-float-a var(--dur, 19s) ease-in-out var(--delay, -5s) infinite;
+}
+
+.pixel-star-float-b {
+  will-change: transform, opacity;
+  animation: star-float-b var(--dur, 23s) ease-in-out var(--delay, -11s) infinite;
+}
+
+.pixel-orbit-highlight {
+  animation: orbit-highlight 15s linear infinite;
+}
+
+@keyframes hero-levitate {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+@keyframes hero-chromatic-glitch {
+  0% {
+    transform: translate3d(0, 0, 0);
+    text-shadow: -1.5px 0 rgba(120, 225, 255, 0.45), 1.5px 0 rgba(255, 110, 150, 0.45);
+  }
+  25% {
+    transform: translate3d(-1px, 0, 0);
+    text-shadow: 2px 0 rgba(120, 225, 255, 0.55), -2px 0 rgba(255, 110, 150, 0.55);
+  }
+  50% {
+    transform: translate3d(1px, 0, 0);
+    text-shadow: -1.5px 0 rgba(120, 225, 255, 0.4), 1.5px 0 rgba(255, 110, 150, 0.4);
+  }
+  75% {
+    transform: translate3d(-0.5px, 0, 0);
+    text-shadow: 1px 0 rgba(120, 225, 255, 0.25), -1px 0 rgba(255, 110, 150, 0.25);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    text-shadow: none;
+  }
+}
+
+.hero-levitate {
+  will-change: transform;
+  animation: hero-levitate 7.5s ease-in-out infinite;
+}
+
+.hero-chromatic-glitch {
+  animation: hero-chromatic-glitch 240ms steps(2, end) forwards;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* --------------------------------------------------------------------------
+ * Custom dark-space pixel cursor (fine-pointer desktop devices only)
+ * -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  html.custom-cursor-active,
+  html.custom-cursor-active * {
+    cursor: none !important;
+  }
+}
+
+.custom-cursor-root {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.custom-cursor-root[data-visible='true'] {
+  opacity: 1;
+}
+
+.custom-cursor-crosshair-wrap,
+.custom-cursor-ring-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.custom-cursor-crosshair-svg {
+  display: block;
+  transform: translate3d(-50%, -50%, 0);
+  filter: drop-shadow(0 0 4px rgba(245, 245, 245, 0.48));
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease-out;
+}
+
+.custom-cursor-root[data-hover='true'] .custom-cursor-crosshair-svg {
+  transform: translate3d(-50%, -50%, 0) scale(0.88);
+}
+
+.custom-cursor-root[data-pressed='true'] .custom-cursor-crosshair-svg {
+  transform: translate3d(-50%, -50%, 0) scale(0.72);
+}
+
+.custom-cursor-ring-inner {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  transform: translate3d(-50%, -50%, 0);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.custom-cursor-root[data-pressed='true'] .custom-cursor-ring-inner {
+  transform: translate3d(-50%, -50%, 0) scale(0.86);
+}
+
+.custom-cursor-ring-svg,
+.custom-cursor-brackets-svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease-out;
+}
+
+.custom-cursor-ring-svg {
+  width: 28px;
+  height: 28px;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.custom-cursor-brackets-svg {
+  width: 38px;
+  height: 38px;
+  opacity: 0;
+  transform: scale(0.72);
+  filter: drop-shadow(0 0 4px rgba(245, 245, 245, 0.25));
+}
+
+.custom-cursor-root[data-hover='true'] .custom-cursor-ring-svg {
+  opacity: 0;
+  transform: scale(1.32);
+}
+
+.custom-cursor-root[data-hover='true'] .custom-cursor-brackets-svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* LogoLoop pure borderless icons: monochrome white idle -> brand color + scale on hover */
+.logo-loop-icon {
+  opacity: 0.85;
+  filter: brightness(0) invert(1);
+  transform: scale(1);
+  transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+}
+
+.logo-loop-icon:hover {
+  opacity: 1;
+  filter: brightness(1) invert(0);
+  transform: scale(1.12);
+}
+
+.pixel-sky-paused,
+.pixel-sky-paused * {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .pixel-cloud-right,
+  .pixel-cloud-left,
+  .pixel-cloud-bob,
+  .pixel-cloud-horizon,
+  .pixel-star-twinkle,
+  .pixel-star-gleam,
+  .pixel-star-float-a,
+  .pixel-star-float-b,
+  .pixel-orbit-highlight,
+  .hero-levitate,
+  .hero-chromatic-glitch {
+    animation: none !important;
+    transform: none !important;
+    text-shadow: none !important;
+  }
+}
