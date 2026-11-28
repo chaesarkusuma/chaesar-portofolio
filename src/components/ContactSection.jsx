@@ -529,6 +529,13 @@ function ContactSection() {
     }
   }
 
+  const introHidden = prefersReducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, y: 28, scale: 0.97 }
+  const introVisible = prefersReducedMotion
+    ? { opacity: 1 }
+    : { opacity: 1, y: 0, scale: 1 }
+
   const revealHidden = prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 24 }
   const revealVisible = prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }
 
@@ -536,336 +543,353 @@ function ContactSection() {
     <>
       <section
         id="contact"
-        aria-labelledby="contact-heading"
-        className="relative z-10 mx-auto w-full max-w-6xl scroll-mt-10 px-5 pb-16 pt-24 sm:px-10 sm:pb-24 sm:pt-28 lg:px-14"
+        aria-labelledby="contact-intro-heading"
+        className="relative z-10 w-full"
       >
-        {/* 2-Column Responsive Equal-Height Layout (~38% Left / ~62% Right) */}
-        <motion.div
-          initial={revealHidden}
-          whileInView={revealVisible}
-          viewport={{ once: true, amount: 0.12 }}
-          transition={{ duration: prefersReducedMotion ? 0.2 : 0.75, ease: [0.16, 1, 0.3, 1] }}
-          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)] lg:gap-7"
-        >
-          {/* Left Column (~38%): Hubungi + Find Me */}
-          <div className="flex h-full flex-col gap-6">
-            {/* Top Left Card: Hubungi */}
-            <div className={DARK_GLASS_CARD}>
-              <h2
-                id="contact-heading"
-                className="font-sans text-2xl font-extrabold tracking-tight text-white sm:text-[28px]"
-              >
-                Hubungi
-              </h2>
-              <p className="mt-2 font-sans text-xs leading-relaxed text-[#9A9CA3] sm:text-[13.5px]">
-                Ada yang mau didiskusikan? Langsung kirim pesan aja ya..!
-              </p>
+        {/* Stage 1: Auto-height "Contact" Heading with balanced spacing to cards */}
+        <div className="mb-14 flex h-auto min-h-0 w-full items-center justify-center px-5 pt-20 sm:mb-20 sm:px-8 sm:pt-28 lg:mb-24 lg:pt-32">
+          <motion.h2
+            id="contact-intro-heading"
+            initial={introHidden}
+            whileInView={introVisible}
+            viewport={{ once: false, amount: 0.45 }}
+            transition={{ duration: prefersReducedMotion ? 0.2 : 0.85, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center font-sans text-4xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-5xl md:text-5xl lg:text-[4.25rem]"
+          >
+            Contact
+          </motion.h2>
+        </div>
 
-              <form onSubmit={handleContactSubmit} className="mt-6 space-y-3.5" noValidate>
-                <div className={DARK_INPUT_SHELL}>
-                  <UserIcon className="h-4 w-4 shrink-0 text-[#7E828A]" />
-                  <input
-                    type="text"
-                    name="name"
-                    value={contactForm.name}
-                    onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Nama Anda"
-                    aria-label="Nama Anda"
-                    required
-                    className="h-11 w-full bg-transparent font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] focus:outline-none"
-                  />
-                </div>
-
-                <div className={DARK_INPUT_SHELL}>
-                  <MailIcon className="h-4 w-4 shrink-0 text-[#7E828A]" />
-                  <input
-                    type="email"
-                    name="email"
-                    value={contactForm.email}
-                    onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))}
-                    placeholder="Email Anda"
-                    aria-label="Email Anda"
-                    required
-                    className="h-11 w-full bg-transparent font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#151720]/85 px-3.5 py-3 text-[#F5F5F5] transition-colors focus-within:border-white/50 focus-within:ring-1 focus-within:ring-white/20">
-                  <ChatBubbleIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#7E828A]" />
-                  <textarea
-                    name="message"
-                    rows={4}
-                    value={contactForm.message}
-                    onChange={(e) => setContactForm((p) => ({ ...p, message: e.target.value }))}
-                    placeholder="Pesan Anda"
-                    aria-label="Pesan Anda"
-                    required
-                    className="w-full resize-none bg-transparent font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] focus:outline-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSendingMessage}
-                  className={PRIMARY_CTA_BUTTON}
+        {/* Stage 2: Main 2-Column Contact & Guestbook Layout */}
+        <div className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-10 sm:pb-24 lg:px-14">
+          {/* 2-Column Responsive Equal-Height Layout (~38% Left / ~62% Right) */}
+          <motion.div
+            initial={revealHidden}
+            whileInView={revealVisible}
+            viewport={{ once: true, amount: 0.12 }}
+            transition={{ duration: prefersReducedMotion ? 0.2 : 0.75, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)] lg:gap-7"
+          >
+            {/* Left Column (~38%): Hubungi + Find Me */}
+            <div className="flex h-full flex-col gap-6">
+              {/* Top Left Card: Hubungi */}
+              <div className={DARK_GLASS_CARD}>
+                <h2
+                  id="contact-heading"
+                  className="font-sans text-2xl font-extrabold tracking-tight text-white sm:text-[28px]"
                 >
-                  <SendPlaneIcon />
-                  <span>{isSendingMessage ? 'Mengirim...' : 'Kirim Pesan'}</span>
-                </button>
-              </form>
-            </div>
+                  Hubungi
+                </h2>
+                <p className="mt-2 font-sans text-xs leading-relaxed text-[#9A9CA3] sm:text-[13.5px]">
+                  Ada yang mau didiskusikan? Langsung kirim pesan aja ya..!
+                </p>
 
-            {/* Bottom Left Card: Find Me */}
-            <div className={`${DARK_GLASS_CARD} flex flex-1 flex-col justify-between`}>
-              <div>
-                <h3 className="font-sans text-lg font-extrabold tracking-tight text-[#F5F5F5] sm:text-xl">
-                  Find Me
-                </h3>
+                <form onSubmit={handleContactSubmit} className="mt-6 space-y-3.5" noValidate>
+                  <div className={DARK_INPUT_SHELL}>
+                    <UserIcon className="h-4 w-4 shrink-0 text-[#7E828A]" />
+                    <input
+                      type="text"
+                      name="name"
+                      value={contactForm.name}
+                      onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Nama Anda"
+                      aria-label="Nama Anda"
+                      required
+                      className="h-11 w-full bg-transparent font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] focus:outline-none"
+                    />
+                  </div>
 
-                <div className="mt-4 divide-y divide-white/[0.08]">
-                  {SOCIAL_LINKS.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center justify-between gap-3 py-3.5 transition-colors first:pt-1.5 last:pb-3"
-                    >
-                      <div className="flex min-w-0 items-center gap-3.5">
-                        <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-105 ${item.iconBg}`}
-                        >
-                          <SocialBrandGlyph id={item.id} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-sans text-sm font-bold text-[#F5F5F5] transition-colors group-hover:text-white">
-                            {item.title}
-                          </p>
-                          <p className="truncate font-sans text-xs text-[#8E9299]">
-                            {item.subtitle}
-                          </p>
-                        </div>
-                      </div>
+                  <div className={DARK_INPUT_SHELL}>
+                    <MailIcon className="h-4 w-4 shrink-0 text-[#7E828A]" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="Email Anda"
+                      aria-label="Email Anda"
+                      required
+                      className="h-11 w-full bg-transparent font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] focus:outline-none"
+                    />
+                  </div>
 
-                      <span className="shrink-0 text-[#6F737C] transition-colors group-hover:text-white">
-                        <ExternalLinkIcon />
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-[#14161D]">
-                <img
-                  src={FIND_ME_PHOTO}
-                  alt="Chaesar Kusuma"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className="aspect-square w-full select-none object-cover object-center"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column (~62%): Tulis Komentar + Live Komentar List */}
-          <div className="flex h-full flex-col gap-6">
-            {/* Top Right Card: Tulis Komentar */}
-            <div className={DARK_GLASS_CARD}>
-              <div className="flex items-center gap-3 border-b border-white/[0.08] pb-4">
-                <span className={DARK_HEADER_BADGE}>
-                  <ChatBubbleIcon className="h-4 w-4" />
-                </span>
-                <h3 className="font-sans text-lg font-extrabold tracking-tight text-white sm:text-xl">
-                  Tulis Komentar
-                </h3>
-              </div>
-
-              <form onSubmit={handleCommentSubmit} className="mt-5 space-y-4" noValidate>
-                <div>
-                  <label
-                    htmlFor="comment-author-name"
-                    className="mb-1.5 block font-sans text-xs font-bold tracking-wide text-[#D4D6DC]"
-                  >
-                    Nama
-                  </label>
-                  <input
-                    id="comment-author-name"
-                    type="text"
-                    maxLength={60}
-                    value={commentForm.name}
-                    onChange={(e) => setCommentForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Masukkan nama kamu"
-                    required
-                    className="h-11 w-full rounded-xl border border-white/10 bg-[#151720]/85 px-4 font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] transition-colors focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="comment-author-text"
-                    className="mb-1.5 block font-sans text-xs font-bold tracking-wide text-[#D4D6DC]"
-                  >
-                    Komentar
-                  </label>
-                  <textarea
-                    id="comment-author-text"
-                    rows={4}
-                    maxLength={500}
-                    value={commentForm.text}
-                    onChange={(e) => setCommentForm((p) => ({ ...p, text: e.target.value }))}
-                    placeholder="Tulis komentar kamu di sini..."
-                    required
-                    className="w-full resize-none rounded-xl border border-white/10 bg-[#151720]/85 p-4 font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] transition-colors focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
-                  />
-                </div>
-
-                <div>
-                  <span className="mb-1.5 block font-sans text-xs font-bold tracking-wide text-[#D4D6DC]">
-                    Foto Profil <span className="font-normal text-[#8E9299]">(opsional)</span>
-                  </span>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                    id="comment-avatar-upload"
-                  />
+                  <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#151720]/85 px-3.5 py-3 text-[#F5F5F5] transition-colors focus-within:border-white/50 focus-within:ring-1 focus-within:ring-white/20">
+                    <ChatBubbleIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#7E828A]" />
+                    <textarea
+                      name="message"
+                      rows={4}
+                      value={contactForm.message}
+                      onChange={(e) => setContactForm((p) => ({ ...p, message: e.target.value }))}
+                      placeholder="Pesan Anda"
+                      aria-label="Pesan Anda"
+                      required
+                      className="w-full resize-none bg-transparent font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] focus:outline-none"
+                    />
+                  </div>
 
                   <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-dashed border-white/15 bg-[#151720]/70 px-4 font-sans text-sm font-medium text-[#D4D6DC] transition-colors hover:border-white/45 hover:text-white focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    type="submit"
+                    disabled={isSendingMessage}
+                    className={PRIMARY_CTA_BUTTON}
                   >
-                    <ImageUploadIcon />
-                    <span>{avatarFileName ? 'Change Profile Photo' : 'Choose Profile Photo'}</span>
+                    <SendPlaneIcon />
+                    <span>{isSendingMessage ? 'Mengirim...' : 'Kirim Pesan'}</span>
                   </button>
+                </form>
+              </div>
 
-                  <p className="mt-1.5 text-center font-mono text-[11px] text-[#7E828A]">
-                    Max file size: 5MB
-                  </p>
+              {/* Bottom Left Card: Find Me */}
+              <div className={`${DARK_GLASS_CARD} flex flex-1 flex-col justify-between`}>
+                <div>
+                  <h3 className="font-sans text-lg font-extrabold tracking-tight text-[#F5F5F5] sm:text-xl">
+                    Find Me
+                  </h3>
 
-                  {avatarError && (
-                    <p className="mt-1.5 text-center font-sans text-xs text-rose-400">
-                      {avatarError}
-                    </p>
-                  )}
-
-                  {avatarPreview && (
-                    <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#151720]/90 px-3.5 py-2">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <img
-                          src={avatarPreview}
-                          alt="Selected avatar preview"
-                          decoding="async"
-                          className="h-9 w-9 shrink-0 rounded-full border border-white/15 object-cover"
-                        />
-                        <span className="truncate font-mono text-xs text-[#D4D6DC]">
-                          {avatarFileName}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleClearAvatar}
-                        className="shrink-0 font-sans text-xs font-semibold text-rose-400 hover:text-rose-300"
+                  <div className="mt-4 divide-y divide-white/[0.08]">
+                    {SOCIAL_LINKS.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center justify-between gap-3 py-3.5 transition-colors first:pt-1.5 last:pb-3"
                       >
-                        Hapus
-                      </button>
-                    </div>
-                  )}
+                        <div className="flex min-w-0 items-center gap-3.5">
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-105 ${item.iconBg}`}
+                          >
+                            <SocialBrandGlyph id={item.id} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-sans text-sm font-bold text-[#F5F5F5] transition-colors group-hover:text-white">
+                              {item.title}
+                            </p>
+                            <p className="truncate font-sans text-xs text-[#8E9299]">
+                              {item.subtitle}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="shrink-0 text-[#6F737C] transition-colors group-hover:text-white">
+                          <ExternalLinkIcon />
+                        </span>
+                      </a>
+                    ))}
+                  </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmittingComment}
-                  className={PRIMARY_CTA_BUTTON}
-                >
-                  <SendPlaneIcon />
-                  <span>{isSubmittingComment ? 'Mengirim...' : 'Kirim Komentar'}</span>
-                </button>
-              </form>
+                <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-[#14161D]">
+                  <img
+                    src={FIND_ME_PHOTO}
+                    alt="Chaesar Kusuma"
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                    className="aspect-square w-full select-none object-cover object-center"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Bottom Right Card: Komentar (Dynamic Real-Time Supabase List) */}
-            <div className={`${DARK_GLASS_CARD} flex flex-1 flex-col min-h-0`}>
-              <div className="flex shrink-0 items-center gap-3 border-b border-white/[0.08] pb-4">
-                <span className={DARK_HEADER_BADGE}>
-                  <ChatBubbleIcon className="h-4 w-4" />
-                </span>
-                <h3 className="font-sans text-lg font-extrabold tracking-tight text-white sm:text-xl">
-                  Komentar <span className="text-white">({comments.length})</span>
-                </h3>
-              </div>
+            {/* Right Column (~62%): Tulis Komentar + Live Komentar List */}
+            <div className="flex h-full flex-col gap-6">
+              {/* Top Right Card: Tulis Komentar */}
+              <div className={DARK_GLASS_CARD}>
+                <div className="flex items-center gap-3 border-b border-white/[0.08] pb-4">
+                  <span className={DARK_HEADER_BADGE}>
+                    <ChatBubbleIcon className="h-4 w-4" />
+                  </span>
+                  <h3 className="font-sans text-lg font-extrabold tracking-tight text-white sm:text-xl">
+                    Tulis Komentar
+                  </h3>
+                </div>
 
-              <div className="relative mt-2 flex flex-1 flex-col min-h-[280px]">
-                <ul
-                  data-lenis-prevent
-                  className="dark-scrollbar flex-1 min-h-0 max-h-[380px] divide-y divide-white/[0.07] overflow-y-auto pr-2 md:absolute md:inset-0 md:max-h-none"
-                >
-                {isLoadingComments ? (
-                  <li className="py-10 text-center font-sans text-xs text-[#8E9299]">
-                    Memuat komentar...
-                  </li>
-                ) : commentsError ? (
-                  <li className="py-10 text-center font-sans text-xs text-rose-400">
-                    {commentsError}
-                  </li>
-                ) : comments.length === 0 ? (
-                  <li className="py-10 text-center font-sans text-xs text-[#8E9299]">
-                    Belum ada komentar. Jadilah yang pertama!
-                  </li>
-                ) : (
-                  <AnimatePresence initial={false}>
-                    {comments.map((comment) => (
-                      <motion.li
-                        key={comment.id}
-                        initial={
-                          prefersReducedMotion
-                            ? { opacity: 0 }
-                            : { opacity: 0, y: -12, scale: 0.98 }
-                        }
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                        className="flex items-start gap-3.5 py-4 first:pt-3.5"
-                      >
-                        {comment.avatarUrl ? (
+                <form onSubmit={handleCommentSubmit} className="mt-5 space-y-4" noValidate>
+                  <div>
+                    <label
+                      htmlFor="comment-author-name"
+                      className="mb-1.5 block font-sans text-xs font-bold tracking-wide text-[#D4D6DC]"
+                    >
+                      Nama
+                    </label>
+                    <input
+                      id="comment-author-name"
+                      type="text"
+                      maxLength={60}
+                      value={commentForm.name}
+                      onChange={(e) => setCommentForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Masukkan nama kamu"
+                      required
+                      className="h-11 w-full rounded-xl border border-white/10 bg-[#151720]/85 px-4 font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] transition-colors focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="comment-author-text"
+                      className="mb-1.5 block font-sans text-xs font-bold tracking-wide text-[#D4D6DC]"
+                    >
+                      Komentar
+                    </label>
+                    <textarea
+                      id="comment-author-text"
+                      rows={4}
+                      maxLength={500}
+                      value={commentForm.text}
+                      onChange={(e) => setCommentForm((p) => ({ ...p, text: e.target.value }))}
+                      placeholder="Tulis komentar kamu di sini..."
+                      required
+                      className="w-full resize-none rounded-xl border border-white/10 bg-[#151720]/85 p-4 font-sans text-sm text-[#F5F5F5] placeholder-[#6B6F78] transition-colors focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    />
+                  </div>
+
+                  <div>
+                    <span className="mb-1.5 block font-sans text-xs font-bold tracking-wide text-[#D4D6DC]">
+                      Foto Profil <span className="font-normal text-[#8E9299]">(opsional)</span>
+                    </span>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                      id="comment-avatar-upload"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-dashed border-white/15 bg-[#151720]/70 px-4 font-sans text-sm font-medium text-[#D4D6DC] transition-colors hover:border-white/45 hover:text-white focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    >
+                      <ImageUploadIcon />
+                      <span>{avatarFileName ? 'Change Profile Photo' : 'Choose Profile Photo'}</span>
+                    </button>
+
+                    <p className="mt-1.5 text-center font-mono text-[11px] text-[#7E828A]">
+                      Max file size: 5MB
+                    </p>
+
+                    {avatarError && (
+                      <p className="mt-1.5 text-center font-sans text-xs text-rose-400">
+                        {avatarError}
+                      </p>
+                    )}
+
+                    {avatarPreview && (
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#151720]/90 px-3.5 py-2">
+                        <div className="flex min-w-0 items-center gap-3">
                           <img
-                            src={comment.avatarUrl}
-                            alt={comment.name}
-                            loading="lazy"
+                            src={avatarPreview}
+                            alt="Selected avatar preview"
                             decoding="async"
-                            className="h-10 w-10 shrink-0 rounded-full border border-white/15 object-cover"
+                            className="h-9 w-9 shrink-0 rounded-full border border-white/15 object-cover"
                           />
-                        ) : (
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[#8E9299]">
-                            <UserIcon className="h-4 w-4" />
+                          <span className="truncate font-mono text-xs text-[#D4D6DC]">
+                            {avatarFileName}
                           </span>
-                        )}
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className="truncate font-sans text-sm font-bold text-[#F5F5F5]">
-                              {comment.name}
-                            </p>
-                            <span className="shrink-0 font-mono text-[11px] text-[#7E828A]">
-                              {formatCommentTime(comment.createdAt)}
-                            </span>
-                          </div>
-                          <p className="mt-1 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-[#A3A6AE] sm:text-[13px]">
-                            {comment.message}
-                          </p>
                         </div>
-                      </motion.li>
-                    ))}
-                  </AnimatePresence>
-                )}
-                </ul>
+                        <button
+                          type="button"
+                          onClick={handleClearAvatar}
+                          className="shrink-0 font-sans text-xs font-semibold text-rose-400 hover:text-rose-300"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingComment}
+                    className={PRIMARY_CTA_BUTTON}
+                  >
+                    <SendPlaneIcon />
+                    <span>{isSubmittingComment ? 'Mengirim...' : 'Kirim Komentar'}</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Bottom Right Card: Komentar (Dynamic Real-Time Supabase List) */}
+              <div className={`${DARK_GLASS_CARD} flex flex-1 flex-col min-h-0`}>
+                <div className="flex shrink-0 items-center gap-3 border-b border-white/[0.08] pb-4">
+                  <span className={DARK_HEADER_BADGE}>
+                    <ChatBubbleIcon className="h-4 w-4" />
+                  </span>
+                  <h3 className="font-sans text-lg font-extrabold tracking-tight text-white sm:text-xl">
+                    Komentar <span className="text-white">({comments.length})</span>
+                  </h3>
+                </div>
+
+                <div className="relative mt-2 flex flex-1 flex-col min-h-[280px]">
+                  <ul
+                    data-lenis-prevent
+                    className="dark-scrollbar flex-1 min-h-0 max-h-[380px] divide-y divide-white/[0.07] overflow-y-auto pr-2 md:absolute md:inset-0 md:max-h-none"
+                  >
+                    {isLoadingComments ? (
+                      <li className="py-10 text-center font-sans text-xs text-[#8E9299]">
+                        Memuat komentar...
+                      </li>
+                    ) : commentsError ? (
+                      <li className="py-10 text-center font-sans text-xs text-rose-400">
+                        {commentsError}
+                      </li>
+                    ) : comments.length === 0 ? (
+                      <li className="py-10 text-center font-sans text-xs text-[#8E9299]">
+                        Belum ada komentar. Jadilah yang pertama!
+                      </li>
+                    ) : (
+                      <AnimatePresence initial={false}>
+                        {comments.map((comment) => (
+                          <motion.li
+                            key={comment.id}
+                            initial={
+                              prefersReducedMotion
+                                ? { opacity: 0 }
+                                : { opacity: 0, y: -12, scale: 0.98 }
+                            }
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                            className="flex items-start gap-3.5 py-4 first:pt-3.5"
+                          >
+                            {comment.avatarUrl ? (
+                              <img
+                                src={comment.avatarUrl}
+                                alt={comment.name}
+                                loading="lazy"
+                                decoding="async"
+                                className="h-10 w-10 shrink-0 rounded-full border border-white/15 object-cover"
+                              />
+                            ) : (
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[#8E9299]">
+                                <UserIcon className="h-4 w-4" />
+                              </span>
+                            )}
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <p className="truncate font-sans text-sm font-bold text-[#F5F5F5]">
+                                  {comment.name}
+                                </p>
+                                <span className="shrink-0 font-mono text-[11px] text-[#7E828A]">
+                                  {formatCommentTime(comment.createdAt)}
+                                </span>
+                              </div>
+                              <p className="mt-1 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-[#A3A6AE] sm:text-[13px]">
+                                {comment.message}
+                              </p>
+                            </div>
+                          </motion.li>
+                        ))}
+                      </AnimatePresence>
+                    )}
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Subtle Copyright Footer */}
@@ -885,11 +909,10 @@ function ContactSection() {
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             role="status"
             aria-live="polite"
-            className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-2.5 rounded-2xl border px-4 py-3 font-sans text-xs font-medium shadow-[0_14px_38px_rgba(0,0,0,0.65)] backdrop-blur-sm sm:text-sm ${
-              toast.type === 'error'
-                ? 'border-rose-500/35 bg-[#1B1014]/95 text-rose-200'
-                : 'border-white/25 bg-[#111216]/95 text-white'
-            }`}
+            className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-2.5 rounded-2xl border px-4 py-3 font-sans text-xs font-medium shadow-[0_14px_38px_rgba(0,0,0,0.65)] backdrop-blur-sm sm:text-sm ${toast.type === 'error'
+              ? 'border-rose-500/35 bg-[#1B1014]/95 text-rose-200'
+              : 'border-white/25 bg-[#111216]/95 text-white'
+              }`}
           >
             {toast.type === 'error' ? <AlertCircleIcon /> : <CheckCircleIcon />}
             <span>{toast.message}</span>
